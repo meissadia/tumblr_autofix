@@ -63,7 +63,7 @@ module DK
       summary = post['summary'].chomp.strip
       user_c  = Sanitize.fragment(post['reblog']['comment']).strip
       user_c.start_with?(@prefix)    ||
-        summary.start_with?(@prefix) ||
+        summary.start_with?(@prefix)
     end
 
     # Post has a summary or tags?
