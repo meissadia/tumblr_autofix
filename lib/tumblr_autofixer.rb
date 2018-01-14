@@ -4,7 +4,7 @@ require 'sanitize'
 require_relative 'autofixer/data_store'
 require_relative 'autofixer/helpers'
 require_relative 'autofixer/results'
-require 'pry'
+# require 'pry'
 
 module DK
   class Idable
