@@ -29,9 +29,12 @@ tag_idx  [[Array]] - Indicated which tag to use as the new comment
 ## Summary Example  
 
 ### Get the title from the first line, then add the author  
+Update ~/taf_summary.yml   
+```
 :angulargeometry:  
 \- title = summary.split("\n")[0]  
 \- return "#{title} by Angular Geometry"  
+```
 
 ###  Add prefix & postfix to formatted strings  
 Update ~/taf_summary.yml  

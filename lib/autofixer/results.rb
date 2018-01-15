@@ -83,7 +83,7 @@ module DK
     def header_numbers
       puts '_'*40
       puts "#{@total} Drafts were retrieved."
-      puts "#{@processed.size} posts have been ignored as 'already processed'."
+      puts "#{@processed} posts have been ignored as 'already processed'."
       puts "#{@no_info.size} posts have been ignored as 'no tags and no caption'."
       puts '_'*40
     end
