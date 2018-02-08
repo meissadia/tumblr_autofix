@@ -24,9 +24,9 @@ module DK
       @ystore   = YAML::Store.new(home_file('taf_data.yml'))
       @sstore   = YAML::Store.new(home_file('taf_summary.yml'))
       @no_trail, @updated, @rest = [], [], []
+      @no_info = []
       @processed = 0
       @total = 0
-      @no_info   = []
 
       prep_user_data_files
       @last_tag = restore(@ystore, :last_tag)
@@ -53,7 +53,7 @@ module DK
       drafts.select do |draft|
         (@processed += 1)     && next if     post_processed?(draft)
         (@no_info   << draft) && next unless (post_has_info?(draft) || post_has_trail?(draft))
-        (@no_trail  << draft) && next unless post_has_trail?(draft)
+        (@no_info  << draft) && next unless post_has_trail?(draft)
         true
       end
     end
