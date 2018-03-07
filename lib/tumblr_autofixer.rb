@@ -1,6 +1,7 @@
 require 'tumblr_draftking'
 require 'yaml/store'
 require 'sanitize'
+require 'pry'
 require_relative 'autofixer/data_store'
 require_relative 'autofixer/helpers'
 require_relative 'autofixer/results'
@@ -24,7 +25,7 @@ module DK
       @ystore   = YAML::Store.new(home_file('taf_data.yml'))
       @sstore   = YAML::Store.new(home_file('taf_summary.yml'))
       @no_trail, @updated, @rest = [], [], []
-      @no_info = []
+      @need_review = []
       @processed = 0
       @total = 0
 
@@ -42,71 +43,73 @@ module DK
 
     def show_version(opts)
       return unless opts.include?('-v')
-      puts "\ntumblr_autofixer v0.0.1"
+      puts "\ntumblr_autofixer v0.0.2"
       puts
       exit
     end
 
     def get_informative_posts
-      drafts = @dk.get_posts
+      drafts = @dk.get_posts.map{|post| DK::Post.new(post)}
       @total = drafts.size
       drafts.select do |draft|
-        (@processed += 1)     && next if     post_processed?(draft)
-        (@no_info   << draft) && next unless (post_has_info?(draft) || post_has_trail?(draft))
-        (@no_info  << draft) && next unless post_has_trail?(draft)
+        ((@updated << draft)  && next) if     post_already_processed?(draft)
+        # ((@need_review << draft)  && next) unless (post_has_info?(draft) || post_has_trail?(draft))
+        ((@need_review << draft)  && next) unless post_has_info?(draft)
+        ((@need_review << draft)  && next) unless post_has_trail?(draft)
         true
       end
+      # puts @total, @updated.size, @need_review.size, @total - @updated.size - @need_review.size
+      # binding.pry
+      # drafts
     end
 
     # Post already has prefix?
-    def post_processed?(post)
-      summary = post['summary'].chomp.strip
-      user_c  = Sanitize.fragment(post['reblog']['comment']).strip
+    def post_already_processed?(post)
+      summary = post.summary.chomp.strip
+      user_c  = Sanitize.fragment(post.comment).strip
       user_c.start_with?(@prefix) || summary.start_with?(@prefix)
     end
 
     # Post has a summary or tags?
     def post_has_info?(post)
-      summary = post['summary'].chomp.strip
-      tags    = post['tags']
-      !summary.empty? || !tags.empty?
+      summary = post.summary.chomp.strip
+      !summary.empty? || !post.tags.empty?
     end
 
     # Do we know where it was reblogged from?
     def post_has_trail?(post)
-      !post['trail'].empty?
+      !post.trail.empty?
     end
 
 
     def autofixer(posts)
       posts.each_with_index do |post, idx|
-        c_text = post['summary']
-        tags   = post['tags']
-        from   = post['trail'].first['blog']['name']
+        c_text = post.summary
+        tags   = post.tags
+        from   = post.trail.first.blog.name
 
-        next if @ignore.include?(from)
+        (@need_review << post) && next if @ignore.include?(from)
         next if fix_from_tag(post, idx, from)
 
         if commands = restore(@sstore, from.to_sym) # has custom processing defined
           new_comment = special_summary(c_text, from, commands)
           success = update_post_comment(post, new_comment)
-          @updated << [from, new_comment, link_to_edit(post)] if success
+          @updated << post if success
         elsif @summary.include?(from)
           new_comment = special_summary(c_text, from, [])
           success = update_post_comment(post, new_comment)
-          @updated << [from, new_comment, link_to_edit(post)] if success
+          @updated << post if success
         elsif @last_tag.include?(from)
           new_comment = autofix(tags.last, from)
           next if new_comment.eql?(ERROR_STRING)
           success = update_post_comment(post, new_comment)
-          @updated << [from, new_comment, link_to_edit(post)] if success
+          @updated << post if success
         else
           if @clear_r # add base prefix to skip these posts in future runs
             success = update_post_comment(post, @prefix)
-            @updated << [from, @prefix, link_to_edit(post)] if success
+            @updated << post if success
           elsif
-            short_summary = c_text.length > C_LEN ? c_text[0,C_LEN] + '...' : c_text
-            @rest << [from, short_summary, tags, link_to_edit(post)]
+            @rest << post
           end
         end
       end
@@ -115,10 +118,13 @@ module DK
     def fix_from_tag(post, idx, from)
       @tag_idx.each_with_index do |names, idx|
         next unless names.include?(from)
-        new_comment = autofix(post['tags'][idx], from)
-        return false if new_comment.eql?(ERROR_STRING)
+        new_comment = autofix(post.tags[idx], from)
+        if new_comment.eql?(ERROR_STRING)
+          @need_review << post
+          return false
+        end
         success = update_post_comment(post, new_comment)
-        @updated << [from, new_comment, link_to_edit(post)] if success
+        @updated << post if success
         return true
       end
       false
@@ -130,9 +136,8 @@ module DK
     end
 
     def update_post_comment(post, comment)
-      res = DK::Post.new(post)
-      res.replace_comment_with(comment)
-      res.save(client: @dk.client, simulate: @dk.simulate)
+      post.replace_comment_with(comment)
+      post.save(client: @dk.client, simulate: @dk.simulate)
     end
 
     def special_summary(summary, from, commands)
