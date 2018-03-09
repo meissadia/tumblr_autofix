@@ -38,6 +38,7 @@ Update ~/taf_summary.yml
 
 ###  Add prefix & postfix to formatted strings  
 1 - Update ~/taf_summary.yml  
+note: string must be stored in the `res` variable for pre/postfixing to work
 ```
 :kazu721010:  
 - title, architect = lines[0].split('/')  
