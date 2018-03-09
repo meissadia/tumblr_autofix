@@ -37,17 +37,17 @@ Update ~/taf_summary.yml
 ```
 
 ###  Add prefix & postfix to formatted strings  
-Update ~/taf_summary.yml  
+1 - Update ~/taf_summary.yml  
 ```
 :kazu721010:  
 - title, architect = lines[0].split('/')  
 - photographer = lines[2].split("©").last  
 - res = "project: #{title}\narchitect: #{architect}\nphotographer: #{photographer}"  
 ```
-Run Autofixer with options: `taf -p '**\n' -P '\n--'`   
+2 - Run Autofixer with options: `taf -p '**\n' -P '\n--'`   
 
 
-Resulting caption for kazu721010 posts:  
+3 - Resulting caption for kazu721010 posts:  
 ```
 **  
 Project: Project Title  
