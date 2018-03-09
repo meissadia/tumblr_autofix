@@ -32,8 +32,8 @@ tag_idx  [[Array]] - Indicated which tag to use as the new comment
 Update ~/taf_summary.yml   
 ```
 :angulargeometry:  
-\- title = summary.split("\n")[0]  
-\- return "#{title} by Angular Geometry"  
+- title = summary.split("\n")[0]  
+- return "#{title} by Angular Geometry"  
 ```
 
 ###  Add prefix & postfix to formatted strings  
