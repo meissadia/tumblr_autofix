@@ -5,6 +5,7 @@ require 'pry'
 require_relative 'autofixer/data_store'
 require_relative 'autofixer/helpers'
 require_relative 'autofixer/results'
+require 'fileutils'
 # require 'pry'
 
 module DK
@@ -18,16 +19,21 @@ module DK
       @spliter  = opts[opts.find_index('-S') + 1] rescue ' '
       @prefix   = opts[opts.find_index('-p') + 1] rescue nil
       @postfix  = opts[opts.find_index('-P') + 1] rescue nil
-      @clear_r  = opts.find_index('--clear-rest')
+      @clear    = opts.find_index('--clear')
       @dk       = DK::Client.new(dk_opts)
-      `cp summary.yml ~/taf_summary.yml`
-      `cp data.yml.bak ~/taf_data.yml`
-      @ystore   = YAML::Store.new(home_file('taf_data.yml'))
-      @sstore   = YAML::Store.new(home_file('taf_summary.yml'))
-      @no_trail, @updated, @rest = [], [], []
+      `cp data.yml.bak ~/config_md/taf/data.yml`   if File.exist?('data.yml.bak')
+      `cp summary.yml ~/config_md/taf/summary.yml` if File.exist?('summary.yml')
+
+      # Ensure directory structure exists
+      c_dir = home_file('/config_md/taf/')
+      FileUtils::makedirs c_dir unless Dir.exist?(c_dir)
+      @ystore   = YAML::Store.new("#{c_dir}data.yml")
+      @sstore   = YAML::Store.new("#{c_dir}summary.yml")
+
+      @already_processed = []
       @need_review = []
-      @processed = 0
-      @total = 0
+      @updated = []
+      @error = []
 
       prep_user_data_files
       @last_tag = restore(@ystore, :last_tag)
@@ -36,6 +42,10 @@ module DK
       @ignore   = restore(@ystore, :ignore)
 
       autofixer(get_informative_posts)
+      if @clear
+        clear(@need_review)
+        @need_review = @error
+      end
       show_results
     end
 
@@ -43,7 +53,7 @@ module DK
 
     def show_version(opts)
       return unless opts.include?('-v')
-      puts "\ntumblr_autofixer v0.0.2"
+      puts "\ntumblr_autofixer v0.0.3"
       puts
       exit
     end
@@ -52,15 +62,11 @@ module DK
       drafts = @dk.get_posts.map{|post| DK::Post.new(post)}
       @total = drafts.size
       drafts.select do |draft|
-        ((@updated << draft)  && next) if     post_already_processed?(draft)
-        # ((@need_review << draft)  && next) unless (post_has_info?(draft) || post_has_trail?(draft))
+        ((@already_processed << draft) && next) if post_already_processed?(draft)
         ((@need_review << draft)  && next) unless post_has_info?(draft)
         ((@need_review << draft)  && next) unless post_has_trail?(draft)
         true
       end
-      # puts @total, @updated.size, @need_review.size, @total - @updated.size - @need_review.size
-      # binding.pry
-      # drafts
     end
 
     # Post already has prefix?
@@ -84,53 +90,52 @@ module DK
 
     def autofixer(posts)
       posts.each_with_index do |post, idx|
-        c_text = post.summary
-        tags   = post.tags
-        from   = post.trail.first.blog.name
+        tags = post.tags
+        trail_name   = post.trail.first.blog.name
+        post_summary = post.summary
 
-        (@need_review << post) && next if @ignore.include?(from)
-        next if fix_from_tag(post, idx, from)
-
-        if commands = restore(@sstore, from.to_sym) # has custom processing defined
-          new_comment = special_summary(c_text, from, commands)
-          success = update_post_comment(post, new_comment)
-          @updated << post if success
-        elsif @summary.include?(from)
-          new_comment = special_summary(c_text, from, [])
-          success = update_post_comment(post, new_comment)
-          @updated << post if success
-        elsif @last_tag.include?(from)
-          new_comment = autofix(tags.last, from)
-          next if new_comment.eql?(ERROR_STRING)
-          success = update_post_comment(post, new_comment)
-          @updated << post if success
+        ((@need_review << post) && next) if @ignore.include?(trail_name)
+        if fix_from_tag(post, trail_name)
+          # Successfully used a tag-index to process post
+          next
+        elsif commands = restore(@sstore, trail_name.to_sym)
+          # Has custom processing defined
+          new_comment = special_summary(post_summary, trail_name, commands)
+        elsif @summary.include?(trail_name)
+          # Create comment from post.summary
+          new_comment = special_summary(post_summary, trail_name, [])
+        elsif @last_tag.include?(trail_name)
+          # Use the last available post.tags
+          new_comment = autofix(tags.last, trail_name)
         else
-          if @clear_r # add base prefix to skip these posts in future runs
-            success = update_post_comment(post, @prefix)
-            @updated << post if success
-          elsif
-            @rest << post
-          end
+          # Don't know what to do with it.
+          new_comment = ERROR_STRING
         end
+
+        ((@need_review << post) && next) if new_comment.eql?(ERROR_STRING)
+        
+        success = update_post_comment(post, new_comment)
+        (success ? @updated : @needs_review) << post
       end
     end
 
-    def fix_from_tag(post, idx, from)
+    def fix_from_tag(post, blog_name)
       @tag_idx.each_with_index do |names, idx|
-        next unless names.include?(from)
-        new_comment = autofix(post.tags[idx], from)
+        next unless names.include?(blog_name)
+        new_comment = autofix(post.tags[idx])
         if new_comment.eql?(ERROR_STRING)
+          # No tag at the expected tag-index
           @need_review << post
           return false
         end
         success = update_post_comment(post, new_comment)
-        @updated << post if success
+        (success ? @updated : @need_review) << post
         return true
       end
       false
     end
 
-    def autofix(tag, from)
+    def autofix(tag, from='')
       return ERROR_STRING if tag.nil?
       prefix(capitalize(tag))
     end
@@ -141,12 +146,19 @@ module DK
     end
 
     def special_summary(summary, from, commands)
-      return if summary.nil? || from.nil?
+      return '' if summary.nil? || from.nil?
       lines = summary.split("\n")
       res   = summary.downcase
       b     = binding
       commands.each{ |x| eval(x, b) }
       prefix(capitalize(res))
+    end
+
+    def clear(posts)
+      posts.each do |post|
+        success = update_post_comment(post, @prefix)
+        (success ? @updated : @error) << post
+      end
     end
 
   end # end of DK::Idable

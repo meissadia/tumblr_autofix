@@ -3,7 +3,7 @@
 \- Two configuration files are created in your home directory: taf_data.yml & taf_summary.yml  
 \- Careful when editing configuration files, as with all YAML files, indentation is crucial!   
 
-# Using ~/taf_data.yml
+# Using ~/config_md/taf/data.yml
 no_names [Array]   - Blogs listed here will be ignored during processing  
 summary  [Array]   - Will apply capitalization, add prefix and postfix strings  
 last_tag [Array]   - Use the last available tag as your comment  
@@ -12,7 +12,7 @@ tag_idx  [[Array]] - Indicated which tag to use as the new comment
   - Blogs listed in tag_idx[1] will use the second  
 
 
-# Using ~/taf_summary.yml  
+# Using ~/config_md/taf/summary.yml  
 ## Available variables  
   \- `summary` - the plain text of the current post's caption  
   \- `res`     - lower case version of summary, useful for simplified text searching  
@@ -29,7 +29,7 @@ tag_idx  [[Array]] - Indicated which tag to use as the new comment
 ## Summary Example  
 
 ### Get the title from the first line, then add the author  
-Update ~/taf_summary.yml   
+Update ~/config_md/taf/summary.yml with the following
 ```
 :angulargeometry:  
 - title = summary.split("\n")[0]  
@@ -37,7 +37,7 @@ Update ~/taf_summary.yml
 ```
 
 ###  Add prefix & postfix to formatted strings  
-1 - Update ~/taf_summary.yml  
+1 - Update ~/config_md/taf/summary.yml  
 note: string must be stored in the `res` variable for pre/postfixing to work
 ```
 :kazu721010:  

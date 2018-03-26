@@ -15,7 +15,7 @@ module DK
     end
 
     def prep_user_data_files
-      example = 'example-blog-name'
+      ex_blog_name = 'example-blog-name'
       keys = [:no_names, :last_tag, :tag_idx, :summary]
       keys.each do |key|
         unless restore(@ystore, key)
@@ -23,19 +23,19 @@ module DK
           case key
           when :no_names
             value << 'Ignore the following blogs during processing.'
-            value << example
+            value << ex_blog_name
           when :last_tag
             value << 'Use the last available tag for these blogs.'
-            value << example
+            value << ex_blog_name
           when :tag_idx
             value = [
-              ['Use the first tag for these blogs.',example],
-              ['Use the second tag for these blogs.',example],
-              ['Use the third tag for these blogs.',example]
+              ['Use tag #1 for these blogs.', ex_blog_name],
+              ['Use tag #2 for these blogs.', ex_blog_name],
+              ['Use tag #3 for these blogs.', ex_blog_name]
             ]
           when :summary
-            value << 'Capitalize, add prefix and postfix'
-            value << example
+            value << 'Capitalize, add prefix and postfix to existing summary text'
+            value << ex_blog_name
           end
           store(@ystore, key, value)
         end
