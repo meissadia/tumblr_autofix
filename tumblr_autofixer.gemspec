@@ -1,6 +1,7 @@
+require_relative 'lib/tumblr_autofixer'
 Gem::Specification.new do |s|
   s.name           = 'tumblr_autofixer'
-  s.version        = '0.0.1'
+  s.version        = DK::Idable::VERSION
   s.authors        = ['Meissa Dia']
   s.email          = ['meissadia@gmail.com']
   s.homepage       = 'https://github.com/meissadia/tumblr_autofixer'
@@ -19,7 +20,6 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = '>= 2.1.0'
   s.add_runtime_dependency 'tumblr_draftking', '~> 0.9.0'
-  s.add_runtime_dependency 'psych', '2.0.8'
   s.add_runtime_dependency 'sanitize', '4.5.0'
 
 end
