@@ -2,20 +2,20 @@ module DK
   class Idable
     private
 
+    def bfrom(post)
+      post.trail.first.blog.name rescue '-no trail-'
+    end
+
     def show_results
-      @processed = 0
+      cli_header
 
-      puts ' '*80 + "\r\n"
-      header_simulation
-      header_numbers
-
-      fname1 = home_file('/config_md/taf/already_processed.html')
-      fname2 = home_file('/config_md/taf/need_review.html')
-      fname3 = home_file('/config_md/taf/updated.html')
+      fname1 = confile('already_processed.html')
+      fname2 = confile('need_review.html')
+      fname3 = confile('updated.html')
 
       @file_index = [
-        ["Updated (#{@updated.size})", fname3],
         ["Needs Review (#{@need_review.size})", fname2],
+        ["Updated (#{@updated.size})", fname3],
         ["Already Processed (#{@already_processed.size})", fname1]
       ]
 
@@ -25,23 +25,23 @@ module DK
 
 
       # Already Processed
-      @already_processed.sort_by!{ |x| x.trail.first.blog.name}
+      @already_processed.sort_by!{ |x| x.id }
       generate_review_webpage(@already_processed, fname1, msg1)
 
       # Need Review
       @need_review.sort_by! do |x|
-        bname = x.trail.first.blog.name rescue '-no trail-'
-        [bname, x.tags.length]
+        bname = bfrom(x)
+        [bname, x.id]
       end
       generate_review_webpage(@need_review, fname2, msg2)
 
       # updated
-      @updated.sort_by!{ |x| x.trail.first.blog.name rescue '-no trail-'}
+      @updated.sort_by!{ |x| bfrom(x)}
       generate_review_webpage(@updated, fname3, msg3)
 
       puts
       puts
-      `open #{@file_index.first.last}`
+      `open #{@file_index.first.last}` if @showres
     end
 
     def generate_review_webpage(post_info, fname, msg1='')
@@ -63,10 +63,8 @@ module DK
       page += "</body></html>"
 
       # Create directory structure and file if it doesn't exist
-      FileUtils::mkdir_p File.dirname(fname) unless File.exist?(fname)
+      # FileUtils::mkdir_p File.dirname(fname) unless File.exist?(fname)
       File.open(fname, 'w'){|f| f.puts page}
-
-      # @new_files << fname # Track created files
       puts "** Updated file: #{fname} **:\n"
     end
 
@@ -76,21 +74,19 @@ module DK
       count = post.photos.size
       res  = "<td><a target='_blank' href='#{link_to_edit(post)}'>"
       res += "<img src='#{photo}'>#{'  (' + count.to_s + ')' if count > 1}</a></td>"
-      res += "<td><p>#{post.trail.first.blog.name rescue '-no trail-'}</p></td>"
+      res += "<td><p>#{bfrom(post)}</p></td>"
       res += "<td><p>#{post.comment.empty? ? '-no comment-' : post.comment}</p></td>"
       res += "<td><p>#{post.tags.empty? ? '-no tags-' : post.tags.join(', ')}</p></td>"
     end
 
-    def header_simulation
+    def cli_header
+      puts ' '*80 + "\r\n"  # Clear any lingering text
       if @simulate
         puts '*'*40
         puts '*'*14 + ' SIMULATION ' + '*'*14
         puts '*'*40
         puts
       end
-    end
-
-    def header_numbers
       puts '_'*40
       puts
       puts "#{@total} drafts were retrieved."

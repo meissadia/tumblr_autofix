@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name           = 'tumblr_autofixer'
-  s.version        = '0.0.3'
+  s.version        = '0.0.1'
   s.authors        = ['Meissa Dia']
   s.email          = ['meissadia@gmail.com']
   s.homepage       = 'https://github.com/meissadia/tumblr_autofixer'

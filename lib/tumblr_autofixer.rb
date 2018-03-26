@@ -1,11 +1,8 @@
 require 'tumblr_draftking'
 require 'yaml/store'
 require 'sanitize'
-require 'pry'
-require_relative 'autofixer/data_store'
-require_relative 'autofixer/helpers'
-require_relative 'autofixer/results'
 require 'fileutils'
+Dir[File.join(__dir__, 'autofixer', '**', '*.rb')].each {|file| require file }
 # require 'pry'
 
 module DK
@@ -13,49 +10,60 @@ module DK
     C_LEN = 25
     ERROR_STRING = '**'
     def initialize(opts)
-      show_version(opts)
-      @simulate = opts.include?('-s')
-      @limit    = opts[opts.find_index('-l') + 1].to_i rescue nil
-      @spliter  = opts[opts.find_index('-S') + 1] rescue ' '
-      @prefix   = opts[opts.find_index('-p') + 1] rescue nil
-      @postfix  = opts[opts.find_index('-P') + 1] rescue nil
-      @clear    = opts.find_index('--clear')
-      @dk       = DK::Client.new(dk_opts)
-      `cp data.yml.bak ~/config_md/taf/data.yml`   if File.exist?('data.yml.bak')
-      `cp summary.yml ~/config_md/taf/summary.yml` if File.exist?('summary.yml')
+      check_for_command(ARGV, opts)
+      extract_opts(opts)
 
-      # Ensure directory structure exists
-      c_dir = home_file('/config_md/taf/')
-      FileUtils::makedirs c_dir unless Dir.exist?(c_dir)
-      @ystore   = YAML::Store.new("#{c_dir}data.yml")
-      @sstore   = YAML::Store.new("#{c_dir}summary.yml")
+      @config_dir = home_file('/config_md/taf/')
+      @dk = DK::Client.new(dk_opts)
 
-      @already_processed = []
-      @need_review = []
-      @updated = []
-      @error = []
+      # Ensure my latest config files are in place.
+      `cp data.yml.bak #{confile('data.yml')}`   if File.exist?('data.yml.bak')
+      `cp summary.yml #{confile('summary.yml')}` if File.exist?('summary.yml')
 
-      prep_user_data_files
-      @last_tag = restore(@ystore, :last_tag)
-      @tag_idx  = restore(@ystore, :tag_idx)
-      @summary  = restore(@ystore, :summary)
-      @ignore   = restore(@ystore, :ignore)
+      read_configuration
+      @already_processed, @need_review, @updated = [], [], []
 
       autofixer(get_informative_posts)
-      if @clear
-        clear(@need_review)
-        @need_review = @error
-      end
+      @need_review = clear(@need_review) if @clear
       show_results
     end
 
     private
 
-    def show_version(opts)
-      return unless opts.include?('-v')
-      puts "\ntumblr_autofixer v0.0.3"
-      puts
-      exit
+    def read_configuration
+      # Ensure directory structure exists
+      FileUtils::makedirs @config_dir unless Dir.exist?(@config_dir)
+
+      # Ensure configuration files are present
+      @ystore   = YAML::Store.new("#{confile('data.yml')}")
+      @sstore   = YAML::Store.new("#{confile('summary.yml')}")
+      prep_user_data_files
+
+      # Cache config data
+      @last_tag = restore(@ystore, :last_tag)
+      @tag_idx  = restore(@ystore, :tag_idx)
+      @summary  = restore(@ystore, :summary)
+      @ignore   = restore(@ystore, :ignore)
+    end
+
+    def check_for_command(args, opts)
+      show_help(args, opts)
+      show_version(opts)
+      open_results(args)
+    end
+
+    def confile(fname)
+      @config_dir + fname
+    end
+
+    def extract_opts(opts)
+      @simulate = opts.include?('-s')
+      @limit    = opts[opts.find_index('-l') + 1].to_i rescue nil
+      @spliter  = opts[opts.find_index('-S') + 1] rescue ' '
+      @prefix   = opts[opts.find_index('-p') + 1] rescue ''
+      @postfix  = opts[opts.find_index('-P') + 1] rescue ''
+      @showres  = opts.find_index('--show')
+      @clear    = opts.find_index('--clear')
     end
 
     def get_informative_posts
@@ -63,8 +71,8 @@ module DK
       @total = drafts.size
       drafts.select do |draft|
         ((@already_processed << draft) && next) if post_already_processed?(draft)
-        ((@need_review << draft)  && next) unless post_has_info?(draft)
-        ((@need_review << draft)  && next) unless post_has_trail?(draft)
+        ((@need_review << draft) && next) unless post_has_info?(draft)
+        ((@need_review << draft) && next) unless post_has_trail?(draft)
         true
       end
     end
@@ -73,6 +81,7 @@ module DK
     def post_already_processed?(post)
       summary = post.summary.chomp.strip
       user_c  = Sanitize.fragment(post.comment).strip
+
       user_c.start_with?(@prefix) || summary.start_with?(@prefix)
     end
 
@@ -96,13 +105,12 @@ module DK
 
         ((@need_review << post) && next) if @ignore.include?(trail_name)
         if fix_from_tag(post, trail_name)
-          # Successfully used a tag-index to process post
-          next
+          next # Successfully used a tag-index to process post
         elsif commands = restore(@sstore, trail_name.to_sym)
-          # Has custom processing defined
+          # Has custom processing of post.summary data defined
           new_comment = special_summary(post_summary, trail_name, commands)
         elsif @summary.include?(trail_name)
-          # Create comment from post.summary
+          # Use default processing of post.summary data
           new_comment = special_summary(post_summary, trail_name, [])
         elsif @last_tag.include?(trail_name)
           # Use the last available post.tags
@@ -113,9 +121,9 @@ module DK
         end
 
         ((@need_review << post) && next) if new_comment.eql?(ERROR_STRING)
-        
+
         success = update_post_comment(post, new_comment)
-        (success ? @updated : @needs_review) << post
+        (success ? @updated : @need_review) << post
       end
     end
 
@@ -155,10 +163,12 @@ module DK
     end
 
     def clear(posts)
+      error = []
       posts.each do |post|
         success = update_post_comment(post, @prefix)
-        (success ? @updated : @error) << post
+        (success ? @updated : error) << post
       end
+      error
     end
 
   end # end of DK::Idable
