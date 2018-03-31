@@ -70,8 +70,8 @@ module DK
 
     def post_image_code(post)
       # Alt Sizes (0 - 6) Large to Small
-      photo = post.photos.first.alt_sizes[4].url
       count = post.photos.size
+      photo = count > 0 ? post.photos.first.alt_sizes[4].url : image_missing
       res  = "<td><a target='_blank' href='#{link_to_edit(post)}'>"
       res += "<img src='#{photo}'>#{'  (' + count.to_s + ')' if count > 1}</a></td>"
       res += "<td><p>#{bfrom(post)}</p></td>"
@@ -128,6 +128,10 @@ module DK
           a, a:visited { color: white; vertical-align: middle; line-height: 100px; }
         </style>
       )
+    end
+
+    def image_missing
+      'https://us-east-1.tchyn.io/snopes-production/uploads/2018/03/rating-false.png'
     end
 
   end

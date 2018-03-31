@@ -3,17 +3,18 @@ require 'yaml/store'
 require 'sanitize'
 require 'fileutils'
 Dir[File.join(__dir__, 'autofixer', '**', '*.rb')].each {|file| require file }
-# require 'pry'
+require 'pry'
 
 module DK
   class Idable
     C_LEN = 25
     ERROR_STRING = '**'
     def initialize(opts)
+      @config_dir = home_file('/config_md/taf/')
+
       check_for_command(ARGV, opts)
       extract_opts(opts)
 
-      @config_dir = home_file('/config_md/taf/')
       @dk = DK::Client.new(dk_opts)
 
       # Ensure my latest config files are in place.

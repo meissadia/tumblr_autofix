@@ -2,7 +2,7 @@ module DK
   class Idable
     def open_results(args)
       return unless args.include?('open')
-      file = confile('needs_review.html')
+      file = confile('need_review.html')
       `open #{file}` && exit(0) if File.exist?(file)
       puts
       puts 'Error:'

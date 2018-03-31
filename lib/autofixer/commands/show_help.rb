@@ -7,7 +7,7 @@ module DK
       puts
       puts ' Commands:'
       puts '    help   Show this menu.'
-      puts '    show   Open a webpage with the latest taf results.'
+      puts '    open   Open a webpage with the latest taf results.'
       puts
       puts ' Options:'
       puts '    -s             Simulate Run (no changes saved)'
