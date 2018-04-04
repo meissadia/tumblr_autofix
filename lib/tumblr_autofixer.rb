@@ -3,12 +3,12 @@ require 'yaml/store'
 require 'sanitize'
 require 'fileutils'
 Dir[File.join(__dir__, 'autofixer', '**', '*.rb')].each {|file| require file }
-require 'pry'
 
 module DK
   class Idable
     C_LEN = 25
     ERROR_STRING = '**'
+
     def initialize(opts)
       @config_dir = home_file('/config_md/taf/')
 
@@ -51,6 +51,7 @@ module DK
       show_help(args, opts)
       show_version(opts)
       open_results(args)
+      show_config(args)
     end
 
     def confile(fname)

@@ -35,7 +35,7 @@ module DK
       end
       generate_review_webpage(@need_review, fname2, msg2)
 
-      # updated
+      # Updated
       @updated.sort_by!{ |x| bfrom(x)}
       generate_review_webpage(@updated, fname3, msg3)
 
@@ -63,7 +63,6 @@ module DK
       page += "</body></html>"
 
       # Create directory structure and file if it doesn't exist
-      # FileUtils::mkdir_p File.dirname(fname) unless File.exist?(fname)
       File.open(fname, 'w'){|f| f.puts page}
       puts "** Updated file: #{fname} **:\n"
     end
