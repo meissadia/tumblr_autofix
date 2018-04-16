@@ -1,5 +1,5 @@
 module DK
-  class Idable
-    VERSION = '0.0.3'
+ class Autofixer
+    VERSION = '0.1.0'
   end
 end

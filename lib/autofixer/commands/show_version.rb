@@ -1,7 +1,7 @@
 module DK
-  class Idable
-    def show_version(opts)
-      return unless opts.include?('-v')
+ class Autofixer
+    def show_version
+      return unless @options.include?('-v') || @options.include?('--version')
       puts "\ntumblr_autofixer v#{VERSION}"
       puts
       exit(0)

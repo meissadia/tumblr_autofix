@@ -1,7 +1,11 @@
 #!/usr/bin/env ruby
 require 'rubygems'
 require 'tumblr_draftking'
-require_relative '../lib/tumblr_autofixer'
-# require File.join(Dir.home, '/coding/ruby/tumblr_autofixer/lib/tumblr_autofixer') # DEV ONLY - Run development source using system installed cli
+if ENV['DEV_ENV']
+  # DEV ONLY - Run development source using system installed cli
+  require File.join(Dir.home, "#{ENV['DIR_RUBY']}/tumblr_autofixer/lib/tumblr_autofixer")
+else
+  require_relative '../lib/tumblr_autofixer'
+end
 
-DK::Idable.new(ARGV)
+DK::Autofixer.new(ARGV).run

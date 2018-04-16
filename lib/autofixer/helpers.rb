@@ -1,9 +1,8 @@
 module DK
-  class Idable
-    private
-
-    def dk_opts
-      { simulate: @simulate, limit: @limit }
+ class Autofixer
+    def normalize(tag, from='')
+      return ERROR if tag.nil?
+      affix(capitalize(tag))
     end
 
     def capitalize(s)
@@ -13,12 +12,7 @@ module DK
       res.join(' ')
     end
 
-    def prefix(s)
-      "#{@prefix}#{' ' + @spliter + ' ' if @spliter}#{s}#{@postfix}"
-    end
-
-    def link_to_edit(post)
-      id = post.id rescue post['id']
+    def link_to_edit(id)
       "https://www.tumblr.com/edit/#{id}"
     end
 
@@ -31,10 +25,6 @@ module DK
         s += ' ' while (s.length < r)
       end
       s
-    end
-
-    def home_file(file)
-      DK::Config.home_path_file(file)
     end
 
   end

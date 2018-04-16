@@ -1,7 +1,7 @@
 require_relative 'lib/tumblr_autofixer'
 Gem::Specification.new do |s|
   s.name           = 'tumblr_autofixer'
-  s.version        = DK::Idable::VERSION
+  s.version        = DK::Autofixer::VERSION
   s.authors        = ['Meissa Dia']
   s.email          = ['meissadia@gmail.com']
   s.homepage       = 'https://github.com/meissadia/tumblr_autofixer'

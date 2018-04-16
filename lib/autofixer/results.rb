@@ -1,5 +1,5 @@
 module DK
-  class Idable
+ class Autofixer
     private
 
     def bfrom(post)
@@ -9,31 +9,31 @@ module DK
     def show_results
       cli_header
 
-      fname1 = confile('already_processed.html')
-      fname2 = confile('need_review.html')
+      fname1 = confile('processed.html')
+      fname2 = confile('review.html')
       fname3 = confile('updated.html')
 
       @file_index = [
-        ["Needs Review (#{@need_review.size})", fname2],
-        ["Updated (#{@updated.size})", fname3],
-        ["Already Processed (#{@already_processed.size})", fname1]
+        ["Review (#{@review.size})",          fname2],
+        ["Updated (#{@updated.size})",        fname3],
+        ["Preprocessed (#{@processed.size})", fname1]
       ]
 
-      msg1  = "(#{@already_processed.size}) Drafts are ready to be queued."
-      msg2  = "(#{@need_review.size}) Drafts need visual review."
+      msg1  = "(#{@processed.size}) Drafts are ready to be queued."
+      msg2  = "(#{@review.size}) Drafts need visual review."
       msg3  = "(#{@updated.size}) Drafts were Autofixed."
 
 
       # Already Processed
-      @already_processed.sort_by!{ |x| x.id }
-      generate_review_webpage(@already_processed, fname1, msg1)
+      @processed.sort_by!{ |x| x.id }
+      generate_review_webpage(@processed, fname1, msg1)
 
       # Need Review
-      @need_review.sort_by! do |x|
+      @review.sort_by! do |x|
         bname = bfrom(x)
         [bname, x.id]
       end
-      generate_review_webpage(@need_review, fname2, msg2)
+      generate_review_webpage(@review, fname2, msg2)
 
       # Updated
       @updated.sort_by!{ |x| bfrom(x)}
@@ -41,12 +41,13 @@ module DK
 
       puts
       puts
-      `open #{@file_index.first.last}` if @showres
+      `open #{@file_index.first.last}` if @show_results
     end
 
     def generate_review_webpage(post_info, fname, msg1='')
       page = "<html><head>#{style}</head><body>"
       page += page_nav
+      page += messages_html unless @messages.empty?
       page += '<table>'
       page += '<caption>'
       page += "<p>***** SIMULATION RUN *****</p>" if @simulate
@@ -67,14 +68,24 @@ module DK
       puts "** Updated file: #{fname} **:\n"
     end
 
+    def messages_html
+      msgs = @messages.map { |msg| "<p class='log'>#{msg}</p>"  }
+      "<div>#{msgs}</div>"
+    end
+
     def post_image_code(post)
       # Alt Sizes (0 - 6) Large to Small
       count = post.photos.size
-      photo = count > 0 ? post.photos.first.alt_sizes[4].url : image_missing
-      res  = "<td><a target='_blank' href='#{link_to_edit(post)}'>"
+      photo = post.photos.first.alt_sizes[4].url rescue image_missing
+      photo = image_missing if @hide_pics
+      from = bfrom(post)
+      url = 'http://' + tumblr_url(from)
+      # byebug unless url
+      res  = "<td><a target='_blank' href='#{link_to_edit(post.id)}'>"
       res += "<img src='#{photo}'>#{'  (' + count.to_s + ')' if count > 1}</a></td>"
-      res += "<td><p>#{bfrom(post)}</p></td>"
-      res += "<td><p>#{post.comment.empty? ? '-no comment-' : post.comment}</p></td>"
+      res += "<td><p><a class='blog_link' href='#{url}' target='_blank'>#{from}</a></p></td>"
+      res += "<td><p>#{post.comment.empty? ? '' : post.comment}</p></td>"
+      res += "<td><p>#{post.summary.empty? ? '' : post.summary}</p></td>"
       res += "<td><p>#{post.tags.empty? ? '-no tags-' : post.tags.join(', ')}</p></td>"
     end
 
@@ -90,8 +101,8 @@ module DK
       puts
       puts "#{@total} drafts were retrieved."
       puts "#{pad(@updated.size, @total, 1)} drafts were Autofixed."
-      puts "#{pad(@already_processed.size, @total, 1)} drafts were marked 'already processed'."
-      puts "#{pad(@need_review.size, @total, 1)} drafts require visual review."
+      puts "#{pad(@processed.size, @total, 1)} drafts were marked 'already processed'."
+      puts "#{pad(@review.size, @total, 1)} drafts require visual review."
       puts '_'*40
       puts
     end
@@ -108,7 +119,8 @@ module DK
       res = '<thead><tr>'
       res += '<th>Photo</th>'
       res += '<th>Source</th>'
-      res += '<th>Caption</th>'
+      res += '<th>Comment</th>'
+      res += '<th>Summary</th>'
       res += '<th>Tags</th>'
       res += '</tr></thead>'
     end
@@ -125,12 +137,14 @@ module DK
           nav ul li a { display: inline-block; width: 100%; }
           nav ul li:hover { background-color: rgb(43, 171, 171); }
           a, a:visited { color: white; vertical-align: middle; line-height: 100px; }
+          a.blog_link { color: black; }
+          p.log { width: 100%; background-color: rgb(56, 103, 103); color: white; text-align: center; }
         </style>
       )
     end
 
     def image_missing
-      'https://us-east-1.tchyn.io/snopes-production/uploads/2018/03/rating-false.png'
+      'https://image.freepik.com/free-icon/male-user-shadow_318-34042.jpg'
     end
 
   end

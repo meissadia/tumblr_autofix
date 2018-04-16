@@ -1,5 +1,5 @@
 module DK
-  class Idable
+ class Autofixer
     private
 
     def store(dstore, key, value)

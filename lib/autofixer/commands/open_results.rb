@@ -1,8 +1,8 @@
 module DK
-  class Idable
-    def open_results(args)
-      return unless args.include?('open')
-      file = confile('need_review.html')
+ class Autofixer
+    def open_results
+      return unless @options.include?('open')
+      file = confile('updated.html')
       `open #{file}` && exit(0) if File.exist?(file)
       puts
       puts 'Error:'
