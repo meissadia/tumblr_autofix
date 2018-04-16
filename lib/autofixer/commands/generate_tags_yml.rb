@@ -11,7 +11,7 @@ module DK
     class GenerateTagsYml
       def initialize(opts)
         options = {}
-        options[:limit]   = opt_val('-l') || 50
+        options[:limit]   = opt_val('-l') || 1000
         options[:blog]    = opt_val('-b')
         options[:config]  = opt_val('--config')
         options[:source]  = opt_val('--source') || DK::PUBLISH
