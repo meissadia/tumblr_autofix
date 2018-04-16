@@ -3,11 +3,12 @@
 \- Generated files are stored in ~/config_md/taf/  
 \- Careful when editing configuration files, as with all YAML files, indentation is crucial!   
 
-# Version 0.1.0
+# Version 0.1.1
 - New: [Tag Matcher](#using-the-tag-matcher)! Use a whitelist of tags to improve Autofixer's ability to
 - Ability to include DK::Autofixer in your programs
 - Started building out the test suite
 - Extensive refactoring
+- Correctly requires tumblr_draftking ~> 0.10.0
 - Please report any [issues](https://github.com/meissadia/tumblr_autofix/issues)
 
 # Using the Tag Matcher

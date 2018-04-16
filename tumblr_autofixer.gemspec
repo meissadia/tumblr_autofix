@@ -19,7 +19,7 @@ Gem::Specification.new do |s|
   s.require_paths  = ['lib']
 
   s.required_ruby_version = '>= 2.1.0'
-  s.add_runtime_dependency 'tumblr_draftking', '~> 0.9.0'
+  s.add_runtime_dependency 'tumblr_draftking', '~> 0.10.0'
   s.add_runtime_dependency 'sanitize', '4.5.0'
 
 end
