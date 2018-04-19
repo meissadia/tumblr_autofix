@@ -3,7 +3,7 @@
 \- Generated files are stored in ~/config_md/taf/  
 \- Careful when editing configuration files, as with all YAML files, indentation is crucial!   
 
-# Version 0.1.1
+# Version 0.1.2
 - New: [Tag Matcher](#using-the-tag-matcher)! Use a whitelist of tags to improve Autofixer's ability to
 - Ability to include DK::Autofixer in your programs
 - Started building out the test suite

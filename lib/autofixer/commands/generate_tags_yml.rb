@@ -25,13 +25,13 @@ module DK
         @tstore  = YAML::Store.new("#{confile('tags.yml')}")
         # Preserve existing
         existing = restore(@tstore, :good)
-        puts "Found #{existing.size} tags." if existing
+        # puts "Found #{existing.size} tags." if existing
         @tags += existing if existing
         @tags  = @tags.map(&:downcase)
         @tags.uniq!
         @tags.sort!
         # Save
-        puts "Saving #{@tags.size} tags"
+        # puts "Saving #{@tags.size} tags"
         store(@tstore, :good, @tags)
 
       end

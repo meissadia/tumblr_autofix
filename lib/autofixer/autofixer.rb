@@ -1,5 +1,5 @@
 module DK
- class Autofixer
+  class Autofixer
     ERROR     = '**'
     POSTS     = '/Users/meis/coding/rails/autofixer/db/test.posts'
     CONFIGDIR = '/config_md/taf/'
@@ -153,7 +153,6 @@ module DK
       b     = binding
       commands.each{ |x| eval(x, b) }
       normalize(res)
-    endormalize(res)
     end
 
     def clear(posts)
@@ -180,7 +179,7 @@ module DK
 
     def log(type, msg)
       @messages << "#{type.capitalize}: #{msg}"
-    end    
+    end
 
     # **************************************************************************
     # Filtration Methods
